@@ -1,7 +1,6 @@
 #include "Graphics.h"
 
 #include <d3dcompiler.h>
-#include <iostream>
 
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "d3dcompiler.lib")
@@ -42,19 +41,40 @@ Graphics::Graphics(HWND hWnd, int width, int height) :
 
 	ID3D11Texture2D* pBackBuffer;
 	pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer);
-	pDevice->CreateRenderTargetView(pBackBuffer, NULL, &pRenderTargetView);
-	pBackBuffer->Release();
-	pContext->OMSetRenderTargets(1, &pRenderTargetView, NULL);
+	if (pBackBuffer) {
+		pDevice->CreateRenderTargetView(pBackBuffer, nullptr, &pRenderTarget);
+		pBackBuffer->Release();
+	}
 
 	// Initialize viewport
-	D3D11_VIEWPORT viewport;
-	viewport.Width = 1280;
-	viewport.Height = 720;
+	viewport.Width = kRenderWidth;
+	viewport.Height = kRenderHeight;
 	viewport.MinDepth = 0.0f;
 	viewport.MaxDepth = 1.0f;
 	viewport.TopLeftX = 0.0f;
 	viewport.TopLeftY = 0.0f;
 	pContext->RSSetViewports(1u, &viewport);
+
+	ID3DBlob* pVertexShaderBlob;
+	D3DReadFileToBlob(L"VertexShader.cso", &pVertexShaderBlob);
+	pDevice->CreateVertexShader(pVertexShaderBlob->GetBufferPointer(), pVertexShaderBlob->GetBufferSize(), nullptr, &pVertexShader);
+
+	ID3DBlob* pPixelShaderBlob;
+	D3DReadFileToBlob(L"PixelShader.cso", &pPixelShaderBlob);
+	pDevice->CreatePixelShader(pPixelShaderBlob->GetBufferPointer(), pPixelShaderBlob->GetBufferSize(), nullptr, &pPixelShader);
+
+	D3D11_INPUT_ELEMENT_DESC s_inputElementDesc[2] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0,  D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "COLOR",	     0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	};
+
+	// Initialize input layout
+	pDevice->CreateInputLayout(s_inputElementDesc, 2,
+		pVertexShaderBlob->GetBufferPointer(), pVertexShaderBlob->GetBufferSize(), &pInputLayout);
+
+	pVertexShaderBlob->Release();
+	pPixelShaderBlob->Release();
 }
 
 Graphics::~Graphics() {
@@ -67,26 +87,36 @@ Graphics::~Graphics() {
 	if (pDevice) {
 		pDevice->Release();
 	}
+	if (pInputLayout) {
+		pInputLayout->Release();
+	}
+	if (pVertexShader) {
+		pVertexShader->Release();
+	}
+	if (pPixelShader) {
+		pPixelShader->Release();
+	}
 }
 
-int Graphics::ClearBuffer(float red, float green, float blue) {
-	
+void Graphics::ClearBuffer(float red, float green, float blue) {
 	const float color[4] = { red, green, blue, 1.0f };
-	pContext->ClearRenderTargetView(pRenderTargetView, color);
 
-	static int cnt=0;
-	++cnt;
-	return cnt;
+	pContext->ClearRenderTargetView(pRenderTarget, color);
+	pContext->ClearDepthStencilView(pDepthStencil, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	pContext->OMSetRenderTargets(1, &pRenderTarget, pDepthStencil);
+	pContext->RSSetViewports(1, &viewport);
 }
 
 void Graphics::drawTriangle() {
 	Vertex vertices[3] = {
-		Vertex(Vector3(0.5f, 0.0f), Vector3(1.0f, 1.0f, 1.0f)),
-		Vertex(Vector3(0.0f, 0.0f), Vector3(1.0f, 1.0f, 1.0f)),
-		Vertex(Vector3(0.0f, 0.5f), Vector3(1.0f, 1.0f, 1.0f))
+		{ DirectX::XMFLOAT4(0.0f,   0.5f,  0.5f, 1.0f), DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) },
+		{ DirectX::XMFLOAT4(0.5f,  -0.5f,  0.5f, 1.0f), DirectX::XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) },
+		{ DirectX::XMFLOAT4(-0.5f, -0.5f,  0.5f, 1.0f), DirectX::XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f) }
 	};
 
-	ID3D11Buffer* pVertexBuffer = nullptr;
+	D3D11_SUBRESOURCE_DATA vertexSubresourceData = {};
+	vertexSubresourceData.pSysMem = vertices;
+
 	D3D11_BUFFER_DESC vertexBufferDesc = {};
 	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -94,48 +124,28 @@ void Graphics::drawTriangle() {
 	vertexBufferDesc.MiscFlags = 0u;
 	vertexBufferDesc.ByteWidth = sizeof(vertices);
 	vertexBufferDesc.StructureByteStride = sizeof(Vertex);
-	D3D11_SUBRESOURCE_DATA vertexSubresourceData = {};
-	vertexSubresourceData.pSysMem = vertices;
+	
 	pDevice->CreateBuffer(&vertexBufferDesc, &vertexSubresourceData, &pVertexBuffer);
-	const unsigned int stride = sizeof(Vector3);
+
+	pContext->OMSetRenderTargets(1u, &pRenderTarget, nullptr);
+
+	pContext->IASetInputLayout(pInputLayout);
+
+	const unsigned int stride = sizeof(Vertex);
 	const unsigned int offset = 0;
 
-	// Initialize input layout
-	ID3D11InputLayout* inputLayout = nullptr;
-	D3D11_INPUT_ELEMENT_DESC layout[] =
-	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-	};
-	pDevice->CreateInputLayout(layout, 1, NULL, 0, &inputLayout);
-
 	pContext->IASetVertexBuffers(0u, 1u, &pVertexBuffer, &stride, &offset);
+	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	ID3DBlob* pVertexShaderBlob;
-	ID3D11VertexShader* pVertexShader = nullptr;
-	D3DCompileFromFile(L"VertexShader.hlsl", nullptr, nullptr, "main", "vs_5_0", 0, 0, &pVertexShaderBlob, nullptr);
-	pDevice->CreateVertexShader(pVertexShaderBlob->GetBufferPointer(), pVertexShaderBlob->GetBufferSize(), nullptr, &pVertexShader);
 	pContext->VSSetShader(pVertexShader, nullptr, 0u);
-
-	ID3DBlob* pPixelShaderBlob;
-	ID3D11PixelShader* pPixelShader = nullptr;
-	D3DCompileFromFile(L"PixelShader.hlsl", nullptr, nullptr, "main", "ps_5_0", 0, 0, &pPixelShaderBlob, nullptr);
-	pDevice->CreatePixelShader(pPixelShaderBlob->GetBufferPointer(), pPixelShaderBlob->GetBufferSize(), NULL, &pPixelShader);
 	pContext->PSSetShader(pPixelShader, nullptr, 0u);
 
 	pContext->Draw(3u, 0u);
 	pSwapChain->Present(0, 0);
 
-	delete pVertexShader;
-	delete pVertexBuffer;
+	pVertexBuffer->Release();
 }
 
 void Graphics::GraphicsEnd() {
 	pSwapChain->Present(1u, 0u);
-}
-
-Vertex::Vertex() : m_position(Vector3()), m_color(Vector3()) {
-}
-
-Vertex::Vertex(Vector3 position, Vector3 color) : m_position(position), m_color(color) {
 }

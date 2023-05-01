@@ -1,10 +1,10 @@
 #include "Game.h"
 
-Game::Game() : m_wnd(L"D3D11_main", 1280, 720) {
+Game::Game() : m_wnd(L"D3D11_main", kRenderWidth, kRenderHeight) {
 }
 
 int Game::Start() {
-    m_wnd.getGraphics()->ClearBuffer(1.0f, 0.5f, 0.0f);
+    m_wnd.getGraphics()->ClearBuffer(0.0f, 0.0f, 0.0f);
     try {
         bool running = true;
         MSG msg = { 0 };
@@ -15,7 +15,6 @@ int Game::Start() {
                 DispatchMessage(&msg);
 
                 if (m_wnd.m_keyboard.IsKeyPressed(VK_TAB) || m_wnd.m_keyboard.IsKeyPressed(VK_MENU)) {
-                    m_wnd.setTitle(std::to_wstring(m_wnd.getGraphics()->ClearBuffer(1.0f, 0.5f, 0.0f)));
                     unsigned int result = MessageBox(nullptr, L"HIHIHI", L"TMEPY", MB_OK);
                     if (result == IDOK)
                         m_wnd.CaptureWindow();
@@ -60,7 +59,7 @@ int Game::Start() {
                     running = false;
                 }
             }
-            //DoFrameStart();
+            DoFrameStart();
             m_wnd.getGraphics()->GraphicsEnd(); // necessary for render!! 
         }
 
@@ -83,6 +82,7 @@ int Game::Start() {
 }
 
 void Game::DoFrameStart() {
-    //const float c = sin(m_timer.Peek()) / 2.0f + 0.5f;
-    //m_wnd.getGraphics()->ClearBuffer(c, 0.5f, 0.0f);
+    const float c = sin(m_timer.Peek()) / 2.0f + 0.5f;
+    m_wnd.getGraphics()->ClearBuffer(c, 0.5f, 0.0f);
+    m_wnd.getGraphics()->drawTriangle();
 }

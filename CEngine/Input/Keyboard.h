@@ -30,7 +30,7 @@ public:
 public:
 	Keyboard() = default;
 	~Keyboard() = default;
-	// not copyable
+	// cannot be copied
 	Keyboard(const Keyboard&) = delete;	
 	Keyboard& operator= (const Keyboard&) = delete;
 

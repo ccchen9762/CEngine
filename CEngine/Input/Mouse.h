@@ -35,7 +35,7 @@ public:
 public:
 	Mouse() = default;
 	~Mouse() = default;
-	// not copyable
+	// cannot be copied
 	Mouse(const Mouse&) = delete;
 	Mouse& operator= (const Mouse&) = delete;
 

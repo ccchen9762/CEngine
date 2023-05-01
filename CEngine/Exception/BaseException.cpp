@@ -6,7 +6,7 @@ BaseException::BaseException(const char* file, int line) :
 	m_file(file), m_line(line){
 }
 
-const char* BaseException::what() const noexcept {
+const char* BaseException::what() const {
 	m_whatString.clear();
 	m_whatString = getType();
 	m_whatString += "\n";

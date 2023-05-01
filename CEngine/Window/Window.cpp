@@ -193,7 +193,7 @@ Window::WindowException::WindowException(const char* file, int line, HRESULT hRe
     BaseException(file, line), m_hResult(hResult){
 }
 
-const char* Window::WindowException::what() const noexcept {
+const char* Window::WindowException::what() const {
     std::ostringstream oss;
     oss << getType() << "\n" <<
         "Error Code: " << m_hResult << "\n" <<

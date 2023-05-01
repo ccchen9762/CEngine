@@ -10,7 +10,7 @@ class BaseException : std::exception {
 public:
 	BaseException(const char* file, int line);
 	
-	const char* what() const noexcept override;
+	const char* what() const override;
 	virtual const char* getType() const { return "BaseException"; }
 	virtual const wchar_t* getWType() const { return L"BaseException"; }
 	const std::string& getFile() const { return m_file; }
