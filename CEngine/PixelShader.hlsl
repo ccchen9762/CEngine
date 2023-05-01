@@ -1,15 +1,15 @@
-struct Interpolant {
-	float4 m_position: SV_POSITION;
-	float4 m_color: COLOR0;
+struct PS_INPUT {
+	float4 position: SV_Position;
+	float4 color: COLOR0;
 };
 
-struct Pixel {
-	float4 m_color: SV_TARGET;
+struct PS_OUTPUT {
+	float4 color: SV_TARGET;
 };
 
-Pixel main(Interpolant interpolant) {
-	Pixel pixel;
-	pixel.m_color = interpolant.m_color;
+PS_OUTPUT main(PS_INPUT input) {
+	PS_OUTPUT output;
+	output.color = input.color;
 
-	return pixel;
+	return output;
 }

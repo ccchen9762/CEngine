@@ -1,17 +1,29 @@
-struct Vertex {
-	float4 m_position: SV_POSITION;
-	float4 m_color: COLOR0;
+struct VS_INPUT {
+	float4 position: SV_Position;
+	float4 color: COLOR0;
 };
 
-struct Interpolant {
-	float4 m_position: SV_POSITION;
-	float4 m_color: COLOR0;
+struct VS_OUTPUT {
+	float4 position: SV_Position;
+	float4 color: COLOR0;
 };
 
-Interpolant main(Vertex vertex) {
-	Interpolant interpolant;
-	interpolant.m_position = vertex.m_position;
-	interpolant.m_color = vertex.m_color;
+/*struct VS_OUTPUT
+{
+	float4 Position   : POSITION;
+	float3 Diffuse    : COLOR0;
+	float3 Specular   : COLOR1;
+	float3 HalfVector : TEXCOORD3;
+	float3 Fresnel    : TEXCOORD2;
+	float3 Reflection : TEXCOORD0;
+	float3 NoiseCoord : TEXCOORD1;
+};*/
 
-	return interpolant;
+
+VS_OUTPUT main(VS_INPUT input) {
+	VS_OUTPUT output;
+	output.position = input.position;
+	output.color = input.color;
+
+	return output;
 }
