@@ -2,6 +2,8 @@
 
 #include <d3dcompiler.h>
 
+#include <CEngine/Imgui/imgui_impl_dx11.h>
+
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "d3dcompiler.lib")
 
@@ -55,6 +57,8 @@ Graphics::Graphics(HWND hWnd, int width, int height) :
 	viewport.TopLeftY = 0.0f;
 	pContext->RSSetViewports(1u, &viewport);
 
+	ImGui_ImplDX11_Init(pDevice, pContext);
+
 	ID3DBlob* pVertexShaderBlob;
 	D3DReadFileToBlob(L"VertexShader.cso", &pVertexShaderBlob);
 	pDevice->CreateVertexShader(pVertexShaderBlob->GetBufferPointer(), pVertexShaderBlob->GetBufferSize(), nullptr, &pVertexShader);
@@ -107,10 +111,10 @@ void Graphics::ClearBuffer(float red, float green, float blue) {
 	pContext->RSSetViewports(1, &viewport);
 }
 
-void Graphics::drawTriangle() {
+void Graphics::DrawTriangle() {
 	Vertex vertices[3] = {
-		{ DirectX::XMFLOAT4(0.0f,   0.5f,  0.5f, 1.0f), DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) },
-		{ DirectX::XMFLOAT4(0.5f,  -0.5f,  0.5f, 1.0f), DirectX::XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) },
+		{ DirectX::XMFLOAT4(0.0f,   0.5f,  -1.0f, 1.0f), DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) },
+		{ DirectX::XMFLOAT4(0.5f,  -0.5f,  -3.0f, 1.0f), DirectX::XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) },
 		{ DirectX::XMFLOAT4(-0.5f, -0.5f,  0.5f, 1.0f), DirectX::XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f) }
 	};
 
@@ -141,11 +145,10 @@ void Graphics::drawTriangle() {
 	pContext->PSSetShader(pPixelShader, nullptr, 0u);
 
 	pContext->Draw(3u, 0u);
-	pSwapChain->Present(0, 0);
 
 	pVertexBuffer->Release();
 }
 
 void Graphics::GraphicsEnd() {
-	pSwapChain->Present(1u, 0u);
+	pSwapChain->Present(1u, 0u); // swapchain present need to be call at the end of frame
 }

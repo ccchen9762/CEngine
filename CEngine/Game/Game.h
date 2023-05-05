@@ -2,6 +2,8 @@
 
 #include "CEngine/Window/Window.h"
 #include "CEngine/Timer/Timer.h"
+#include "CEngine/Imgui/ImguiManager.h"
+
 
 class Game {
 public:
@@ -11,7 +13,8 @@ public:
 	Game(const Game&) = delete;
 	Game& operator= (const Game&) = delete;
 
-private:	
+private:
+	ImguiManager imgui; // order matters!! Imgui need to be initialized before Window
 	Window m_wnd;
 	Timer m_timer;
 

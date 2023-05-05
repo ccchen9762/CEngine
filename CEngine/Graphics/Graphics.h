@@ -22,7 +22,7 @@ public:
 
 	void ClearBuffer(float red, float green, float blue);
 
-	void drawTriangle();
+	void DrawTriangle();
 
 	void GraphicsEnd();
 

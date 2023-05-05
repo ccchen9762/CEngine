@@ -2,8 +2,13 @@
 
 #include <sstream>
 
+#include "CEngine/Imgui/imgui_impl_win32.h"
+#include "CEngine/Imgui/imgui_impl_dx11.h"
+
 Window::WindowClass Window::WindowClass::m_WndClass;
 const TCHAR* Window::WindowClass::m_WndClassName = L"D3D11_Wnd_Class";
+
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 Window::WindowClass::WindowClass() : m_hInstance(GetModuleHandle(nullptr)) {
     // register window class
@@ -32,7 +37,7 @@ Window::Window(const TCHAR* title, int width, int height) :
     m_width(width), m_height(height), pGraphics(nullptr) {
 
     // adjust size for exact client space, add 100 for shrinking
-    RECT clientSpace;
+    RECT clientSpace = {0};
     clientSpace.left = 100;
     clientSpace.right = width + 100;
     clientSpace.top = 100;
@@ -50,11 +55,14 @@ Window::Window(const TCHAR* title, int width, int height) :
     ShowWindow(m_hWnd, SW_SHOW);
     UpdateWindow(m_hWnd);
 
+    ImGui_ImplWin32_Init(m_hWnd);
+
     pGraphics = new Graphics(m_hWnd, width, height);
 }
 
 Window::~Window() {
     delete pGraphics;
+    ImGui_ImplWin32_Shutdown();
     DestroyWindow(m_hWnd);
 }
 
@@ -87,6 +95,9 @@ LRESULT WINAPI Window::WndProcRelay(HWND hWnd, UINT msg, WPARAM wParam, LPARAM l
 }
 
 LRESULT WINAPI Window::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
+        return true;
+
     switch (msg) {
     case WM_KILLFOCUS:{
         m_keyboard.ClearKeyState();

@@ -1,5 +1,9 @@
 #include "Game.h"
 
+#include "CEngine/Imgui/imgui.h"
+#include "CEngine/Imgui/imgui_impl_win32.h"
+#include "CEngine/Imgui/imgui_impl_dx11.h"
+
 Game::Game() : m_wnd(L"D3D11_main", kRenderWidth, kRenderHeight) {
 }
 
@@ -84,5 +88,18 @@ int Game::Start() {
 void Game::DoFrameStart() {
     const float c = sin(m_timer.Peek()) / 2.0f + 0.5f;
     m_wnd.getGraphics()->ClearBuffer(c, 0.5f, 0.0f);
-    m_wnd.getGraphics()->drawTriangle();
+    m_wnd.getGraphics()->DrawTriangle();
+
+    // Start the Dear ImGui frame
+    ImGui_ImplDX11_NewFrame();
+    ImGui_ImplWin32_NewFrame();
+    ImGui::NewFrame();
+
+    static bool show_demo_window = true;
+    if (show_demo_window)
+        ImGui::ShowDemoWindow(&show_demo_window);
+    ImGui::Render();
+    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
+    m_wnd.getGraphics()->GraphicsEnd();
 }

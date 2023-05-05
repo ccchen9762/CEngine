@@ -1,6 +1,7 @@
 #include "Timer.h"
 
 Timer::Timer() {
+	m_start = std::chrono::steady_clock::now();
 	m_last = std::chrono::steady_clock::now();
 }
 
