@@ -8,6 +8,12 @@ struct VS_OUTPUT {
 	float4 color: COLOR0;
 };
 
+// shader expect column major matrix
+cbuffer CBuf {
+	//row_major matrix transform;
+	matrix transform;
+};
+
 /*struct VS_OUTPUT
 {
 	float4 Position   : POSITION;
@@ -22,7 +28,7 @@ struct VS_OUTPUT {
 
 VS_OUTPUT main(VS_INPUT input) {
 	VS_OUTPUT output;
-	output.position = input.position;
+	output.position = mul(input.position, transform);
 	output.color = input.color;
 
 	return output;

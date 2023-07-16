@@ -1,6 +1,7 @@
 #include "Graphics.h"
 
 #include <d3dcompiler.h>
+#include <DirectXMath.h>
 
 #include <CEngine/Imgui/imgui_impl_dx11.h>
 
@@ -47,6 +48,38 @@ Graphics::Graphics(HWND hWnd, int width, int height) :
 		pDevice->CreateRenderTargetView(pBackBuffer, nullptr, &pRenderTarget);
 		pBackBuffer->Release();
 	}
+
+	// create dpeth stencil state
+	D3D11_DEPTH_STENCIL_DESC depthDesc = {};
+	depthDesc.DepthEnable = true;
+	depthDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	depthDesc.DepthFunc = D3D11_COMPARISON_LESS;
+	ID3D11DepthStencilState* pDepthState;
+	pDevice->CreateDepthStencilState(&depthDesc, &pDepthState);
+
+	// bind depth stencil state
+	pContext->OMSetDepthStencilState(pDepthState, 1u);
+
+	ID3D11Texture2D* pDepthTexture;
+	D3D11_TEXTURE2D_DESC depthTextureDesc = {};
+	depthTextureDesc.Width = kRenderWidth;
+	depthTextureDesc.Height = kRenderHeight;
+	depthTextureDesc.MipLevels = 1u;
+	depthTextureDesc.ArraySize = 1u;
+	depthTextureDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	depthTextureDesc.SampleDesc.Count = 1u;
+	depthTextureDesc.SampleDesc.Quality = 0u;
+	depthTextureDesc.Usage = D3D11_USAGE_DEFAULT;
+	depthTextureDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+	pDevice->CreateTexture2D(&depthTextureDesc, nullptr, &pDepthTexture);
+
+	D3D11_DEPTH_STENCIL_VIEW_DESC depthViewDesc = {};
+	depthViewDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	depthViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+	depthViewDesc.Texture2D.MipSlice = 0u;
+	pDevice->CreateDepthStencilView(pDepthTexture, &depthViewDesc, &pDepthStencil);
+
+	pContext->OMSetRenderTargets(1u, &pRenderTarget, pDepthStencil);
 
 	// Initialize viewport
 	viewport.Width = kRenderWidth;
@@ -107,7 +140,7 @@ void Graphics::ClearBuffer(float red, float green, float blue) {
 
 	pContext->ClearRenderTargetView(pRenderTarget, color);
 	pContext->ClearDepthStencilView(pDepthStencil, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-	pContext->OMSetRenderTargets(1, &pRenderTarget, pDepthStencil);
+	//pContext->OMSetRenderTargets(1, &pRenderTarget, pDepthStencil); // shouldn't be update every frame
 	pContext->RSSetViewports(1, &viewport);
 }
 
@@ -131,8 +164,6 @@ void Graphics::DrawTriangle() {
 	
 	pDevice->CreateBuffer(&vertexBufferDesc, &vertexSubresourceData, &pVertexBuffer);
 
-	pContext->OMSetRenderTargets(1u, &pRenderTarget, nullptr);
-
 	pContext->IASetInputLayout(pInputLayout);
 
 	const unsigned int stride = sizeof(Vertex);
@@ -145,6 +176,105 @@ void Graphics::DrawTriangle() {
 	pContext->PSSetShader(pPixelShader, nullptr, 0u);
 
 	pContext->Draw(3u, 0u);
+
+	pVertexBuffer->Release();
+}
+
+void Graphics::DrawIndex(float angle, float zTrans) {
+	// vertex buffer
+	Vertex vertices[] = {
+		{ DirectX::XMFLOAT4(-0.5f, -0.5f,  -0.5f, 1.0f), DirectX::XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f) },
+		{ DirectX::XMFLOAT4( 0.5f, -0.5f,  -0.5f, 1.0f), DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) },
+		{ DirectX::XMFLOAT4( 0.5f, -0.5f,   0.5f, 1.0f), DirectX::XMFLOAT4(1.0f, 0.0f, 1.0f, 1.0f) },
+		{ DirectX::XMFLOAT4(-0.5f, -0.5f,   0.5f, 1.0f), DirectX::XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f) },
+		{ DirectX::XMFLOAT4(-0.5f,  0.5f,  -0.5f, 1.0f), DirectX::XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) },
+		{ DirectX::XMFLOAT4( 0.5f,  0.5f,  -0.5f, 1.0f), DirectX::XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f) },
+		{ DirectX::XMFLOAT4( 0.5f,  0.5f,   0.5f, 1.0f), DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f) },
+		{ DirectX::XMFLOAT4(-0.5f,  0.5f,   0.5f, 1.0f), DirectX::XMFLOAT4(0.0f, 1.0f, 1.0f, 1.0f) },
+	};
+
+	D3D11_SUBRESOURCE_DATA vertexSubresourceData = {};
+	vertexSubresourceData.pSysMem = vertices;
+
+	D3D11_BUFFER_DESC vertexBufferDesc = {};
+	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	vertexBufferDesc.CPUAccessFlags = 0u;
+	vertexBufferDesc.MiscFlags = 0u;
+	vertexBufferDesc.ByteWidth = sizeof(vertices);
+	vertexBufferDesc.StructureByteStride = sizeof(Vertex);
+
+	pDevice->CreateBuffer(&vertexBufferDesc, &vertexSubresourceData, &pVertexBuffer);
+
+	// index buffer
+	// its front clockwise omg
+	const unsigned short indices[] = {
+		1,3,0,
+		1,2,3,
+		5,0,4,
+		5,1,0,
+		6,1,5,
+		6,2,1,
+		7,2,6,
+		7,3,2,
+		4,3,7,
+		4,0,3,
+		6,4,7,
+		6,5,4,
+	};
+
+	D3D11_SUBRESOURCE_DATA indexSubresourceData = {};
+	indexSubresourceData.pSysMem = indices;
+
+	ID3D11Buffer* pIndexBuffer = nullptr;
+	D3D11_BUFFER_DESC indexBufferDesc = {};
+	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	indexBufferDesc.CPUAccessFlags = 0u;
+	indexBufferDesc.MiscFlags = 0u;
+	indexBufferDesc.ByteWidth = sizeof(indices);
+	indexBufferDesc.StructureByteStride = sizeof(unsigned short);
+
+	pDevice->CreateBuffer(&indexBufferDesc, &indexSubresourceData, &pIndexBuffer);
+
+	// constant buffer (transform matrix)
+	const DirectX::XMMATRIX constantBuffer[] = { 
+		DirectX::XMMatrixTranspose(
+		DirectX::XMMatrixRotationZ(angle) *
+		DirectX::XMMatrixRotationX(angle) *
+		DirectX::XMMatrixTranslation(0.0f, 0.0f, 2.0f + zTrans) *
+		DirectX::XMMatrixPerspectiveLH(1.0f, kScreenRatio, 0.1f, 10.0f)) };
+
+	D3D11_SUBRESOURCE_DATA constantSubresourceData = {};
+	constantSubresourceData.pSysMem = constantBuffer;
+
+	ID3D11Buffer* pConstantBuffer = nullptr;
+	D3D11_BUFFER_DESC constantBufferDesc = {};
+	constantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	constantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	constantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	constantBufferDesc.MiscFlags = 0u;
+	constantBufferDesc.ByteWidth = sizeof(constantBuffer);
+	constantBufferDesc.StructureByteStride = sizeof(DirectX::XMMATRIX);
+
+	pDevice->CreateBuffer(&constantBufferDesc, &constantSubresourceData, &pConstantBuffer);
+
+	pContext->VSSetConstantBuffers(0u, 1u, &pConstantBuffer);
+
+	// render
+	pContext->IASetInputLayout(pInputLayout);
+
+	const unsigned int stride = sizeof(Vertex);
+	const unsigned int offset = 0;
+
+	pContext->IASetVertexBuffers(0u, 1u, &pVertexBuffer, &stride, &offset);
+	pContext->IASetIndexBuffer(pIndexBuffer, DXGI_FORMAT_R16_UINT, 0);
+	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	pContext->VSSetShader(pVertexShader, nullptr, 0u);
+	pContext->PSSetShader(pPixelShader, nullptr, 0u);
+
+	pContext->DrawIndexed(sizeof(indices) / sizeof(short), 0u, 0u);
 
 	pVertexBuffer->Release();
 }

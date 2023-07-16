@@ -31,6 +31,12 @@
     <Filter Include="Imgui">
       <UniqueIdentifier>{6f877965-8973-46dc-b428-0b30e7712a3d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="GFXResource">
+      <UniqueIdentifier>{1b414130-f75f-4bd8-81dc-db3008ce5cc0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Drawable">
+      <UniqueIdentifier>{fa9bfa09-3799-4db4-9158-3f05ccd1e19f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main\main.cpp">
@@ -83,6 +89,18 @@
     </ClCompile>
     <ClCompile Include="Imgui\imgui_tables.cpp">
       <Filter>Imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="GFXResource\IndexBuffer.cpp">
+      <Filter>GFXResource</Filter>
+    </ClCompile>
+    <ClCompile Include="GFXResource\VertexBuffer.cpp">
+      <Filter>GFXResource</Filter>
+    </ClCompile>
+    <ClCompile Include="GFXResource\ConstantBuffer.cpp">
+      <Filter>GFXResource</Filter>
+    </ClCompile>
+    <ClCompile Include="Drawable\Drawable.cpp">
+      <Filter>Drawable</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -139,6 +157,21 @@
     </ClInclude>
     <ClInclude Include="Imgui\imstb_truetype.h">
       <Filter>Imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="GFXResource\GFXResource.h">
+      <Filter>GFXResource</Filter>
+    </ClInclude>
+    <ClInclude Include="GFXResource\IndexBuffer.h">
+      <Filter>GFXResource</Filter>
+    </ClInclude>
+    <ClInclude Include="GFXResource\VertexBuffer.h">
+      <Filter>GFXResource</Filter>
+    </ClInclude>
+    <ClInclude Include="GFXResource\ConstantBuffer.h">
+      <Filter>GFXResource</Filter>
+    </ClInclude>
+    <ClInclude Include="Drawable\Drawable.h">
+      <Filter>Drawable</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

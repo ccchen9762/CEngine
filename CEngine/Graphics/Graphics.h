@@ -20,9 +20,13 @@ public:
 	Graphics(const Graphics&) = delete;
 	Graphics& operator= (const Graphics&) = delete;
 
+	ID3D11DeviceContext* getDeviceContext() { return pContext; }
+	ID3D11Device* getDevice() { return pDevice; }
+
 	void ClearBuffer(float red, float green, float blue);
 
 	void DrawTriangle();
+	void DrawIndex(float angle, float zTrans);
 
 	void GraphicsEnd();
 

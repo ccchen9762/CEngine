@@ -88,7 +88,9 @@ int Game::Start() {
 void Game::DoFrameStart() {
     const float c = sin(m_timer.Peek()) / 2.0f + 0.5f;
     m_wnd.getGraphics()->ClearBuffer(c, 0.5f, 0.0f);
-    m_wnd.getGraphics()->DrawTriangle();
+    //m_wnd.getGraphics()->DrawTriangle();
+    m_wnd.getGraphics()->DrawIndex(-m_timer.Peek(), 0.0f);
+    m_wnd.getGraphics()->DrawIndex(m_timer.Peek(), 0.0f);
 
     // Start the Dear ImGui frame
     ImGui_ImplDX11_NewFrame();
